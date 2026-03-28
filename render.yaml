@@ -1,0 +1,22 @@
+# Si le dépôt Git est la racine `saas/` : Blueprint Render à la racine du repo.
+services:
+  - type: web
+    name: taskflow-backend
+    runtime: node
+    rootDir: taskflow-backend
+    plan: free
+    region: frankfurt
+    buildCommand: npm ci --include=dev && npm run render:build
+    startCommand: npm run render:start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_ACCESS_SECRET
+        sync: false
+      - key: JWT_REFRESH_SECRET
+        sync: false
+      - key: CORS_ORIGIN
+        sync: false
