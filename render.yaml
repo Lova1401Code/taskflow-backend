@@ -1,9 +1,9 @@
-# Si le dépôt Git est la racine `saas/` : Blueprint Render à la racine du repo.
+# Pour un dépôt Git dont la racine = ce dossier (ex. github.com/.../taskflow-backend).
+# Ne pas utiliser rootDir ici.
 services:
   - type: web
     name: taskflow-backend
     runtime: node
-    rootDir: taskflow-backend
     plan: free
     region: frankfurt
     buildCommand: npm ci --include=dev && npm run render:build

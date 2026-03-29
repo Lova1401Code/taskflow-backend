@@ -37,7 +37,9 @@ VITE_APP_NAME=TaskFlow
 
 ## Déploiement sur Render
 
-1. **Blueprint** : à la racine du dépôt monorepo `saas/`, le fichier `render.yaml` pointe déjà vers `taskflow-backend` (`rootDir`). Dans Render : **New → Blueprint** → connecte le repo. Si ton dépôt Git **n’est que** le backend, copie le bloc `services` de ce `render.yaml` dans la racine de ce repo et **retire** la ligne `rootDir: taskflow-backend`, ou crée un **Web Service** manuel avec **Root Directory** = `.` et les mêmes commandes.
+1. **Blueprint** :
+   - **Dépôt = uniquement `taskflow-backend`** (racine = `package.json` du backend) : utilise le fichier **`taskflow-backend/render.yaml`** de ce projet (**sans** `rootDir`).
+   - **Dépôt = monorepo `saas/`** : utilise le `render.yaml` à la racine du monorepo (avec `rootDir: taskflow-backend`).
 2. **Variables d’environnement** (dashboard Render → Environment) :
    - `DATABASE_URL` : chaîne Postgres (idéalement **pooler** Supabase, port `6543`, `sslmode=require`). Pour que le schéma soit appliqué au build, active **Include in build** sur cette variable.
    - `JWT_ACCESS_SECRET` / `JWT_REFRESH_SECRET` : au moins 16 caractères chacun.
