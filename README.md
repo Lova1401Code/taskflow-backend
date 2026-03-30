@@ -41,9 +41,8 @@ VITE_APP_NAME=TaskFlow
    - **Dépôt = uniquement `taskflow-backend`** (racine = `package.json` du backend) : utilise le fichier **`taskflow-backend/render.yaml`** de ce projet (**sans** `rootDir`).
    - **Dépôt = monorepo `saas/`** : utilise le `render.yaml` à la racine du monorepo (avec `rootDir: taskflow-backend`).
 2. **Variables d’environnement** (dashboard Render → Environment) :
-   - `DATABASE_URL` : chaîne **pooler** Supabase (port `6543`, `sslmode=require`) pour l’app en prod.
-   - `DIRECT_URL` : chaîne **directe** du dashboard Supabase (`db.<ref>.supabase.co`, port `5432`, `sslmode=require`). Sert à `prisma db push` au build et évite les blocages / timeouts sur le seul pooler (erreur de build **143** = processus tué, souvent après un `db push` qui reste coincé).
-   - Active **Include in build** sur **`DATABASE_URL`** et **`DIRECT_URL`**.
+   - `DATABASE_URL` : dans Supabase, copie la chaîne **Session pooler** (compatible **IPv4**, indiquée pour Prisma). **Ne pas** utiliser la connexion **Direct** (`db.*.supabase.co:5432`) sur Render : elle provoque souvent **P1001** depuis les serveurs Render. Une seule URL suffit (plus de `DIRECT_URL`).
+   - Coche **Include in build** pour **`DATABASE_URL`** (nécessaire pour `prisma db push`).
    - `JWT_ACCESS_SECRET` / `JWT_REFRESH_SECRET` : au moins 16 caractères chacun.
    - `CORS_ORIGIN` : origines séparées par des virgules (ex. `https://ton-front.vercel.app,https://ton-autre-domaine.com`). Ajoute aussi l’URL Expo / web si tu l’utilises.
 3. **Build / Start** (déjà dans `render.yaml`) :

@@ -3,11 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
-  // Runtime (pooler 6543) — idéal pour l’app sur Render.
-  url       = env("DATABASE_URL")
-  // Migrations / db push — connexion directe db.*.supabase.co:5432 (évite blocages sur le pooler).
-  directUrl = env("DIRECT_URL")
+  provider = "postgresql"
+  // Sur Render / IPv4 : utiliser la chaîne « Session pooler » Supabase (pas db.*.supabase.co direct).
+  url      = env("DATABASE_URL")
 }
 
 model User {
