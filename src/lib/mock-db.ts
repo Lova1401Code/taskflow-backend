@@ -78,6 +78,14 @@ async function buildSeed(): Promise<MockDB> {
       createdAt: daysAgo(60),
       updatedAt: daysAgo(60),
     },
+    {
+      id: "user-guest-1",
+      email: "guest@taskflow.com",
+      name: "Visiteur",
+      passwordHash: bcrypt.hashSync("guest123", 10),
+      createdAt: daysAgo(1),
+      updatedAt: daysAgo(1),
+    },
   ];
 
   const projects: ProjectRecord[] = [
@@ -106,6 +114,15 @@ async function buildSeed(): Promise<MockDB> {
       color: "#10b981",
       userId: "user-demo-1",
       createdAt: daysAgo(10),
+      updatedAt: daysAgo(1),
+    },
+    {
+      id: "proj-guest-1",
+      name: "Bienvenue",
+      description: "Projet de demonstration pour les visiteurs",
+      color: "#8b5cf6",
+      userId: "user-guest-1",
+      createdAt: daysAgo(1),
       updatedAt: daysAgo(1),
     },
   ];
@@ -182,6 +199,30 @@ async function buildSeed(): Promise<MockDB> {
       dueDate: null,
       createdAt: daysAgo(3),
       updatedAt: daysAgo(3),
+    },
+    {
+      id: "task-guest-1",
+      title: "Découvrir l'application",
+      description: "Explorez les fonctionnalités de gestion de tâches",
+      status: "done",
+      priority: "low",
+      projectId: "proj-guest-1",
+      userId: "user-guest-1",
+      dueDate: null,
+      createdAt: daysAgo(1),
+      updatedAt: daysAgo(1),
+    },
+    {
+      id: "task-guest-2",
+      title: "Créer votre premier projet",
+      description: "Cliquez sur '+ Projet' pour commencer",
+      status: "todo",
+      priority: "high",
+      projectId: "proj-guest-1",
+      userId: "user-guest-1",
+      dueDate: null,
+      createdAt: daysAgo(1),
+      updatedAt: daysAgo(1),
     },
   ];
 
