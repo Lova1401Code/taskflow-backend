@@ -1,7 +1,7 @@
 import { Router } from "express";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
-import { prisma } from "../lib/prisma.js";
+import { getDb, generateUid, nowDate } from "../lib/mock-db.js";
 import { requireAuth } from "../middleware/auth.js";
 import { signAccessToken, signRefreshToken, verifyRefreshToken } from "../utils/jwt.js";
 
@@ -25,24 +25,35 @@ const refreshSchema = z.object({
 router.post("/register", async (req, res, next) => {
   try {
     const input = registerSchema.parse(req.body);
+    const db = getDb();
 
-    const existing = await prisma.user.findUnique({ where: { email: input.email } });
+    const existing = db.users.find((u) => u.email === input.email);
     if (existing) {
       res.status(409).json({ message: "Email already exists" });
       return;
     }
 
     const passwordHash = await bcrypt.hash(input.password, 10);
-    const user = await prisma.user.create({
-      data: { name: input.name, email: input.email, passwordHash },
-    });
+    const now = nowDate();
+    const user = {
+      id: generateUid("user"),
+      name: input.name,
+      email: input.email,
+      passwordHash,
+      createdAt: now,
+      updatedAt: now,
+    };
+    db.users.push(user);
 
     const payload = { userId: user.id, email: user.email };
     const accessToken = signAccessToken(payload);
     const refreshToken = signRefreshToken(payload);
 
-    await prisma.refreshToken.create({
-      data: { token: refreshToken, userId: user.id },
+    db.refreshTokens.push({
+      id: generateUid("rt"),
+      token: refreshToken,
+      userId: user.id,
+      createdAt: now,
     });
 
     res.status(201).json({
@@ -64,8 +75,9 @@ router.post("/register", async (req, res, next) => {
 router.post("/login", async (req, res, next) => {
   try {
     const input = loginSchema.parse(req.body);
-    const user = await prisma.user.findUnique({ where: { email: input.email } });
+    const db = getDb();
 
+    const user = db.users.find((u) => u.email === input.email);
     if (!user) {
       res.status(401).json({ message: "Invalid credentials" });
       return;
@@ -81,7 +93,12 @@ router.post("/login", async (req, res, next) => {
     const accessToken = signAccessToken(payload);
     const refreshToken = signRefreshToken(payload);
 
-    await prisma.refreshToken.create({ data: { token: refreshToken, userId: user.id } });
+    db.refreshTokens.push({
+      id: generateUid("rt"),
+      token: refreshToken,
+      userId: user.id,
+      createdAt: nowDate(),
+    });
 
     res.json({
       data: {
@@ -102,8 +119,9 @@ router.post("/login", async (req, res, next) => {
 router.post("/refresh", async (req, res, next) => {
   try {
     const { refreshToken } = refreshSchema.parse(req.body);
+    const db = getDb();
 
-    const tokenInDb = await prisma.refreshToken.findUnique({ where: { token: refreshToken } });
+    const tokenInDb = db.refreshTokens.find((rt) => rt.token === refreshToken);
     if (!tokenInDb) {
       res.status(401).json({ message: "Invalid refresh token" });
       return;
@@ -120,12 +138,8 @@ router.post("/refresh", async (req, res, next) => {
 
 router.post("/logout", requireAuth, async (req, res, next) => {
   try {
-    const authHeader = req.headers.authorization;
-    if (authHeader?.startsWith("Bearer ")) {
-      const accessToken = authHeader.slice(7);
-      await prisma.refreshToken.deleteMany({ where: { userId: req.auth!.userId } });
-      void accessToken;
-    }
+    const db = getDb();
+    db.refreshTokens = db.refreshTokens.filter((rt) => rt.userId !== req.auth!.userId);
     res.json({ data: true });
   } catch (error) {
     next(error);
@@ -134,7 +148,8 @@ router.post("/logout", requireAuth, async (req, res, next) => {
 
 router.get("/me", requireAuth, async (req, res, next) => {
   try {
-    const user = await prisma.user.findUnique({ where: { id: req.auth!.userId } });
+    const db = getDb();
+    const user = db.users.find((u) => u.id === req.auth!.userId);
     if (!user) {
       res.status(404).json({ message: "User not found" });
       return;

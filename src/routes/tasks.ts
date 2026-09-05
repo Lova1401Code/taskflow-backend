@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
-import { prisma } from "../lib/prisma.js";
+import { getDb, generateUid, nowDate } from "../lib/mock-db.js";
 import { requireAuth } from "../middleware/auth.js";
 import { toTaskDto } from "../utils/serializers.js";
 
@@ -32,36 +32,37 @@ router.get("/", async (req, res, next) => {
   try {
     const page = Number(req.query.page ?? 1);
     const limit = Number(req.query.limit ?? 10);
-    const search = String(req.query.search ?? "").trim();
+    const search = String(req.query.search ?? "").trim().toLowerCase();
     const status = req.query.status ? String(req.query.status) : undefined;
     const projectId = req.query.projectId ? String(req.query.projectId) : undefined;
+    const db = getDb();
 
-    const where = {
-      userId: req.auth!.userId,
-      ...(status ? { status: status as "todo" | "in-progress" | "done" } : {}),
-      ...(projectId ? { projectId } : {}),
-      ...(search
-        ? {
-            OR: [
-              { title: { contains: search, mode: "insensitive" as const } },
-              { description: { contains: search, mode: "insensitive" as const } },
-            ],
-          }
-        : {}),
-    };
+    let items = db.tasks.filter((t) => t.userId === req.auth!.userId);
 
-    const [total, tasks] = await Promise.all([
-      prisma.task.count({ where }),
-      prisma.task.findMany({
-        where,
-        skip: (page - 1) * limit,
-        take: limit,
-        orderBy: { createdAt: "desc" },
-      }),
-    ]);
+    if (status) {
+      items = items.filter((t) => t.status === status);
+    }
+
+    if (projectId) {
+      items = items.filter((t) => t.projectId === projectId);
+    }
+
+    if (search) {
+      items = items.filter(
+        (t) =>
+          t.title.toLowerCase().includes(search) ||
+          t.description.toLowerCase().includes(search)
+      );
+    }
+
+    items.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+
+    const total = items.length;
+    const start = (page - 1) * limit;
+    const paged = items.slice(start, start + limit);
 
     res.json({
-      data: tasks.map(toTaskDto),
+      data: paged.map(toTaskDto),
       meta: {
         total,
         page,
@@ -76,9 +77,10 @@ router.get("/", async (req, res, next) => {
 
 router.get("/:id", async (req, res, next) => {
   try {
-    const task = await prisma.task.findFirst({
-      where: { id: req.params.id, userId: req.auth!.userId },
-    });
+    const db = getDb();
+    const task = db.tasks.find(
+      (t) => t.id === req.params.id && t.userId === req.auth!.userId
+    );
 
     if (!task) {
       res.status(404).json({ message: "Task not found" });
@@ -94,27 +96,31 @@ router.get("/:id", async (req, res, next) => {
 router.post("/", async (req, res, next) => {
   try {
     const input = createTaskSchema.parse(req.body);
+    const db = getDb();
 
-    const project = await prisma.project.findFirst({
-      where: { id: input.projectId, userId: req.auth!.userId },
-    });
+    const project = db.projects.find(
+      (p) => p.id === input.projectId && p.userId === req.auth!.userId
+    );
 
     if (!project) {
       res.status(404).json({ message: "Project not found" });
       return;
     }
 
-    const task = await prisma.task.create({
-      data: {
-        title: input.title,
-        description: input.description ?? "",
-        status: input.status,
-        priority: input.priority,
-        projectId: input.projectId,
-        userId: req.auth!.userId,
-        dueDate: input.dueDate ? new Date(input.dueDate) : null,
-      },
-    });
+    const now = nowDate();
+    const task = {
+      id: generateUid("task"),
+      title: input.title,
+      description: input.description ?? "",
+      status: input.status,
+      priority: input.priority,
+      projectId: input.projectId,
+      userId: req.auth!.userId,
+      dueDate: input.dueDate ? new Date(input.dueDate) : null,
+      createdAt: now,
+      updatedAt: now,
+    };
+    db.tasks.push(task);
 
     res.status(201).json({ data: toTaskDto(task) });
   } catch (error) {
@@ -125,25 +131,31 @@ router.post("/", async (req, res, next) => {
 router.patch("/:id", async (req, res, next) => {
   try {
     const input = updateTaskSchema.parse(req.body);
+    const db = getDb();
 
-    const existing = await prisma.task.findFirst({
-      where: { id: req.params.id, userId: req.auth!.userId },
-    });
+    const idx = db.tasks.findIndex(
+      (t) => t.id === req.params.id && t.userId === req.auth!.userId
+    );
 
-    if (!existing) {
+    if (idx === -1) {
       res.status(404).json({ message: "Task not found" });
       return;
     }
 
-    const task = await prisma.task.update({
-      where: { id: existing.id },
-      data: {
-        ...input,
-        dueDate: input.dueDate === undefined ? undefined : input.dueDate ? new Date(input.dueDate) : null,
-      },
-    });
+    const updated = {
+      ...db.tasks[idx],
+      ...(input.title !== undefined && { title: input.title }),
+      ...(input.description !== undefined && { description: input.description }),
+      ...(input.status !== undefined && { status: input.status }),
+      ...(input.priority !== undefined && { priority: input.priority }),
+      ...(input.dueDate !== undefined && {
+        dueDate: input.dueDate ? new Date(input.dueDate) : null,
+      }),
+      updatedAt: nowDate(),
+    };
+    db.tasks[idx] = updated;
 
-    res.json({ data: toTaskDto(task) });
+    res.json({ data: toTaskDto(updated) });
   } catch (error) {
     next(error);
   }
@@ -151,16 +163,17 @@ router.patch("/:id", async (req, res, next) => {
 
 router.delete("/:id", async (req, res, next) => {
   try {
-    const existing = await prisma.task.findFirst({
-      where: { id: req.params.id, userId: req.auth!.userId },
-    });
+    const db = getDb();
+    const idx = db.tasks.findIndex(
+      (t) => t.id === req.params.id && t.userId === req.auth!.userId
+    );
 
-    if (!existing) {
+    if (idx === -1) {
       res.status(404).json({ message: "Task not found" });
       return;
     }
 
-    await prisma.task.delete({ where: { id: existing.id } });
+    db.tasks.splice(idx, 1);
     res.status(204).send();
   } catch (error) {
     next(error);

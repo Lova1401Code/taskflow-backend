@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import { env } from "./config/env.js";
+import { initSeed } from "./lib/mock-db.js";
 import { authRouter } from "./routes/auth.js";
 import { projectsRouter } from "./routes/projects.js";
 import { tasksRouter } from "./routes/tasks.js";
@@ -40,6 +41,11 @@ app.use("/api/tasks", tasksRouter);
 
 app.use(errorHandler);
 
-app.listen(env.PORT, "0.0.0.0", () => {
-  console.log(`TaskFlow backend listening on http://0.0.0.0:${env.PORT} (LAN: http://<votre-ip>:${env.PORT})`);
+initSeed().then(() => {
+  app.listen(env.PORT, "0.0.0.0", () => {
+    console.log(`TaskFlow backend listening on http://0.0.0.0:${env.PORT} (LAN: http://<votre-ip>:${env.PORT})`);
+  });
+}).catch((err) => {
+  console.error("Failed to initialize seed data:", err);
+  process.exit(1);
 });

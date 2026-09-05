@@ -1,6 +1,6 @@
-import type { Project, Task } from "@prisma/client";
+import type { ProjectRecord, TaskRecord } from "../lib/mock-db.js";
 
-export function toProjectDto(project: Project, tasksCount = 0, completedTasksCount = 0) {
+export function toProjectDto(project: ProjectRecord, tasksCount = 0, completedTasksCount = 0) {
   return {
     id: project.id,
     name: project.name,
@@ -14,7 +14,7 @@ export function toProjectDto(project: Project, tasksCount = 0, completedTasksCou
   };
 }
 
-export function toTaskDto(task: Task) {
+export function toTaskDto(task: TaskRecord) {
   return {
     id: task.id,
     title: task.title,
