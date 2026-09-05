@@ -24,6 +24,7 @@ export function toTaskDto(task: TaskRecord) {
     projectId: task.projectId,
     userId: task.userId,
     dueDate: task.dueDate ? task.dueDate.toISOString() : null,
+    coverImage: task.coverImage || null,
     createdAt: task.createdAt.toISOString(),
     updatedAt: task.updatedAt.toISOString(),
   };

@@ -15,6 +15,7 @@ const createTaskSchema = z.object({
   status: statusEnum.default("todo"),
   priority: priorityEnum.default("medium"),
   dueDate: z.string().nullable().optional(),
+  coverImage: z.string().nullable().optional(),
   projectId: z.string().min(1),
 });
 
@@ -24,6 +25,7 @@ const updateTaskSchema = z.object({
   status: statusEnum.optional(),
   priority: priorityEnum.optional(),
   dueDate: z.string().nullable().optional(),
+  coverImage: z.string().nullable().optional(),
 });
 
 router.use(requireAuth);
@@ -117,6 +119,7 @@ router.post("/", async (req, res, next) => {
       projectId: input.projectId,
       userId: req.auth!.userId,
       dueDate: input.dueDate ? new Date(input.dueDate) : null,
+      coverImage: input.coverImage ?? null,
       createdAt: now,
       updatedAt: now,
     };
@@ -151,6 +154,7 @@ router.patch("/:id", async (req, res, next) => {
       ...(input.dueDate !== undefined && {
         dueDate: input.dueDate ? new Date(input.dueDate) : null,
       }),
+      ...(input.coverImage !== undefined && { coverImage: input.coverImage }),
       updatedAt: nowDate(),
     };
     db.tasks[idx] = updated;

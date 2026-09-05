@@ -33,6 +33,7 @@ export interface TaskRecord {
   projectId: string;
   userId: string;
   dueDate: Date | null;
+  coverImage: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -137,6 +138,7 @@ async function buildSeed(): Promise<MockDB> {
       projectId: "proj-1",
       userId: "user-demo-1",
       dueDate: daysAgo(10),
+      coverImage: null,
       createdAt: daysAgo(18),
       updatedAt: daysAgo(8),
     },
@@ -149,6 +151,7 @@ async function buildSeed(): Promise<MockDB> {
       projectId: "proj-1",
       userId: "user-demo-1",
       dueDate: daysAgo(2),
+      coverImage: "https://images.unsplash.com/photo-1561070791-2526d30994b9?auto=format&fit=crop&w=800&q=80",
       createdAt: daysAgo(12),
       updatedAt: daysAgo(2),
     },
@@ -161,6 +164,7 @@ async function buildSeed(): Promise<MockDB> {
       projectId: "proj-1",
       userId: "user-demo-1",
       dueDate: null,
+      coverImage: null,
       createdAt: daysAgo(5),
       updatedAt: daysAgo(5),
     },
@@ -173,6 +177,7 @@ async function buildSeed(): Promise<MockDB> {
       projectId: "proj-2",
       userId: "user-demo-1",
       dueDate: daysAgo(7),
+      coverImage: null,
       createdAt: daysAgo(14),
       updatedAt: daysAgo(6),
     },
@@ -185,6 +190,7 @@ async function buildSeed(): Promise<MockDB> {
       projectId: "proj-3",
       userId: "user-demo-1",
       dueDate: daysAgo(1),
+      coverImage: "https://images.unsplash.com/photo-1596526131083-e8c633c948d2?auto=format&fit=crop&w=800&q=80",
       createdAt: daysAgo(8),
       updatedAt: daysAgo(1),
     },
@@ -197,6 +203,7 @@ async function buildSeed(): Promise<MockDB> {
       projectId: "proj-3",
       userId: "user-demo-1",
       dueDate: null,
+      coverImage: null,
       createdAt: daysAgo(3),
       updatedAt: daysAgo(3),
     },
@@ -209,6 +216,7 @@ async function buildSeed(): Promise<MockDB> {
       projectId: "proj-guest-1",
       userId: "user-guest-1",
       dueDate: null,
+      coverImage: null,
       createdAt: daysAgo(1),
       updatedAt: daysAgo(1),
     },
@@ -221,6 +229,7 @@ async function buildSeed(): Promise<MockDB> {
       projectId: "proj-guest-1",
       userId: "user-guest-1",
       dueDate: null,
+      coverImage: null,
       createdAt: daysAgo(1),
       updatedAt: daysAgo(1),
     },
